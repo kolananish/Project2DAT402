@@ -221,43 +221,58 @@ print(f"\nThere are {num_classes} different card classes")
 import matplotlib.pyplot as plt
 from PIL import Image
 
-
 def display_one_per_face_value(train_df):
     """
-    Displays one image per face value (e.g., ace, five, eight) from train_df.
-    Assumes train_df has columns: [file_path, label] where label is like 'ace of hearts'.
+    Displays one image per face value (ace, two, three, etc.) from train_df.
     """
-    face_value_to_row = {}
-
-    # Collect one card per face value
-    for _, row in train_df.iterrows():
-        label = row['label']
-        face_value = label.split(" of ")[0]
-        if face_value not in face_value_to_row:
-            face_value_to_row[face_value] = row
-
-    # Ensure we only have 13 cards
-    selected_cards = list(face_value_to_row.values())[:13]
-
-    # Create a 4x3 grid (4 rows, 3 columns)
-    fig, axs = plt.subplots(4, 3, figsize=(15, 10), dpi=80)
-    axs = axs.flatten()  # Flatten the grid for easier indexing
-
-    for i, row in enumerate(selected_cards):
-        img = Image.open(row['file_path'])
-        axs[i].imshow(img)
+    # Define the face values we want to display (in order)
+    face_values = ['ace', 'two', 'three', 'four', 'five', 'six', 'seven', 
+                   'eight', 'nine', 'ten', 'jack', 'queen', 'king']
+    
+    # Create a dictionary to store one example of each face value
+    face_value_examples = {}
+    
+    # Find one example for each face value
+    for face_value in face_values:
+        # Filter dataframe for rows containing this face value
+        matching_rows = train_df[train_df['label'].str.startswith(face_value)]
+        
+        # If we found matches, take the first one
+        if not matching_rows.empty:
+            face_value_examples[face_value] = matching_rows.iloc[0]['file_path']
+    
+    # Create a 5×3 grid (to fit all 13 cards with one empty space)
+    fig, axs = plt.subplots(5, 3, figsize=(15, 20))
+    axs = axs.flatten()  # Flatten for easier indexing
+    
+    # Display each card
+    for i, face_value in enumerate(face_values):
+        if face_value in face_value_examples:
+            try:
+                # Load and display the image
+                img_path = face_value_examples[face_value]
+                img = Image.open(img_path)
+                axs[i].imshow(img)
+                axs[i].set_title(f"{face_value.title()}", fontsize=12)
+            except Exception as e:
+                print(f"Error displaying {face_value}: {e}")
+        
+        # Hide axes
         axs[i].axis('off')
-        axs[i].set_title(f"{row['label']}", fontsize=10)
-
+    
     # Hide any unused subplots
-    for j in range(len(selected_cards), len(axs)):
-        axs[j].axis('off')
-
+    for j in range(len(face_values), len(axs)):
+        fig.delaxes(axs[j])
+    
     plt.tight_layout()
     plt.show()
-
-
-# Call the function with train_df
+    
+    # Print paths of displayed images (helpful for debugging)
+    print("\nDisplayed images:")
+    for face_value in face_values:
+        if face_value in face_value_examples:
+            print(f"{face_value.title()}: {face_value_examples[face_value]}")
+            
 display_one_per_face_value(train_df)
 
 # %% [markdown]
